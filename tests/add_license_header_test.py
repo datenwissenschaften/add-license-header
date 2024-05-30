@@ -13,7 +13,6 @@ from add_license_header import get_block_comment
 from add_license_header import main
 from add_license_header import UnknownFileTypeException
 from add_license_header import wrap_license_in_comments
-# noinspection PyUnresolvedReferences,PyPackageRequirements
 
 
 def test_get_block_comment_regular_file(tmp_path):
