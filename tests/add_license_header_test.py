@@ -13,6 +13,7 @@ from add_license_header import get_block_comment
 from add_license_header import main
 from add_license_header import UnknownFileTypeException
 from add_license_header import wrap_license_in_comments
+# noinspection PyUnresolvedReferences,PyPackageRequirements
 
 
 def test_get_block_comment_regular_file(tmp_path):
@@ -81,17 +82,20 @@ def test_get_block_comment_unsupported_file(tmp_path):
     ),
 )
 def test_wrap_license_in_comments(
-        license_fmt,
-        block_comment,
-        is_managed,
-        expected,
+    license_fmt,
+    block_comment,
+    is_managed,
+    expected,
 ):
     wrap_license_in_comments.cache_clear()
-    assert wrap_license_in_comments(
-        license_fmt,
-        block_comment,
-        is_managed,
-    ) == expected
+    assert (
+        wrap_license_in_comments(
+            license_fmt,
+            block_comment,
+            is_managed,
+        )
+        == expected
+    )
 
 
 @pytest.mark.parametrize(
@@ -121,14 +125,8 @@ def test_wrap_license_in_comments(
             id='regular file without header',
         ),
         pytest.param(
-            (
-                '#!/usr/bin/env python3\n'
-                'print("Hello World")\n'
-            ),
-            (
-                'TEST LICENSE\n'
-                'this is a test license\n'
-            ),
+            ('#!/usr/bin/env python3\n' 'print("Hello World")\n'),
+            ('TEST LICENSE\n' 'this is a test license\n'),
             (
                 '#!/usr/bin/env python3\n'
                 '\n'
@@ -151,10 +149,7 @@ def test_wrap_license_in_comments(
                 '\n'
                 'print("Hello World")\n'
             ),
-            (
-                'NEW TEST LICENSE\n'
-                'this is a test license\n'
-            ),
+            ('NEW TEST LICENSE\n' 'this is a test license\n'),
             (
                 '# LICENSE HEADER MANAGED BY add-license-header\n'
                 '#\n'
@@ -176,9 +171,7 @@ def test_wrap_license_in_comments(
                 '\n'
                 'print("Hello World")\n'
             ),
-            (
-                'NEW TEST LICENSE\n'
-            ),
+            ('NEW TEST LICENSE\n'),
             (
                 '# LICENSE HEADER MANAGED BY add-license-header\n'
                 '#\n'
@@ -195,25 +188,29 @@ def test_main(contents, license_template, expected, tmp_path):
     f = tmp_path.joinpath('t.py')
     f.write_text(contents)
 
-    return_code = main([
-        '--author-name', 'John Smith',
-        '--create-year', '2023',
-        '--edit-year', '2024',
-        '--license', license_template,
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--author-name',
+            'John Smith',
+            '--create-year',
+            '2023',
+            '--edit-year',
+            '2024',
+            '--license',
+            license_template,
+            f.resolve().as_posix(),
+        ],
+    )
 
     assert return_code == 1
     assert f.read_text() == expected
 
 
 def test_main_file_type_with_diffent_comment_block_characters(tmp_path):
-    license_template = (
-        'TEST LICENSE\n'
-        'this is a test license\n'
-    )
+    license_template = 'TEST LICENSE\n' 'this is a test license\n'
     f = tmp_path.joinpath('main.java')
-    f.write_text('''\
+    f.write_text(
+        """\
 /* LICENSE HEADER MANAGED BY add-license-header
  *
  * OLD TEST LICENSE
@@ -224,13 +221,18 @@ public class Main {
         System.out.println("hello, world");
     }
 }
-''')
+""",
+    )
 
-    return_code = main([
-        '--create-year', '2023',
-        '--license', license_template,
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--create-year',
+            '2023',
+            '--license',
+            license_template,
+            f.resolve().as_posix(),
+        ],
+    )
 
     expected = """\
 /* LICENSE HEADER MANAGED BY add-license-header
@@ -262,10 +264,7 @@ public class Main {
                 '\n'
                 'print("Hello World")\n'
             ),
-            (
-                'TEST LICENSE\n'
-                'this is a test license\n'
-            ),
+            ('TEST LICENSE\n' 'this is a test license\n'),
             id='regular file',
         ),
         pytest.param(
@@ -280,10 +279,7 @@ public class Main {
                 '\n'
                 'print("Hello World")\n'
             ),
-            (
-                'TEST LICENSE\n'
-                'this is a test license\n'
-            ),
+            ('TEST LICENSE\n' 'this is a test license\n'),
             id='executable file',
         ),
     ),
@@ -292,11 +288,15 @@ def test_main_no_change(contents, license_template, tmp_path):
     f = tmp_path.joinpath('t.py')
     f.write_text(contents)
 
-    return_code = main([
-        '--create-year', '2023',
-        '--license', license_template,
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--create-year',
+            '2023',
+            '--license',
+            license_template,
+            f.resolve().as_posix(),
+        ],
+    )
 
     assert return_code == 0
     assert f.read_text() == contents
@@ -314,14 +314,20 @@ def test_main_add_license_header_file_to_unmanaged_file(tmp_path):
     f = tmp_path.joinpath('t.py')
     f.write_text('print("Hello World")\n')
 
-    return_code = main([
-        '--license-file', license_file.resolve().as_posix(),
-        '--create-year', '2023',
-        '--edit-year', '2024',
-        '--author-name', 'John Smith',
-        '--unmanaged',
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--license-file',
+            license_file.resolve().as_posix(),
+            '--create-year',
+            '2023',
+            '--edit-year',
+            '2024',
+            '--author-name',
+            'John Smith',
+            '--unmanaged',
+            f.resolve().as_posix(),
+        ],
+    )
 
     expected = """\
 #
@@ -370,14 +376,20 @@ def test_main_unsupported_file(filename, contents, tmp_path):
     f = tmp_path.joinpath(filename)
     f.write_text(contents)
 
-    return_code = main([
-        '--license-file', license_file.resolve().as_posix(),
-        '--create-year', '2023',
-        '--edit-year', '2024',
-        '--author-name', 'John Smith',
-        '--check',
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--license-file',
+            license_file.resolve().as_posix(),
+            '--create-year',
+            '2023',
+            '--edit-year',
+            '2024',
+            '--author-name',
+            'John Smith',
+            '--check',
+            f.resolve().as_posix(),
+        ],
+    )
 
     assert return_code == 1
 
@@ -402,10 +414,13 @@ def test_main_use_defaults_and_git_failed(mock_run, tmp_path):
     )
     mock_run.return_value = mock_git_stdout
 
-    return_code = main([
-        '--license-file', license_file.resolve().as_posix(),
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--license-file',
+            license_file.resolve().as_posix(),
+            f.resolve().as_posix(),
+        ],
+    )
 
     expected = f"""\
 # LICENSE HEADER MANAGED BY add-license-header
@@ -425,16 +440,17 @@ def test_main_check_mode(tmp_path):
     f = tmp_path.joinpath('t.py')
     f.write_text('print("Hello World")\n')
 
-    license_template = (
-        'TEST LICENSE\n'
-        'this is a test license\n'
+    license_template = 'TEST LICENSE\n' 'this is a test license\n'
+    return_code = main(
+        [
+            '--create-year',
+            '2023',
+            '--license',
+            license_template,
+            '--check',
+            f.resolve().as_posix(),
+        ],
     )
-    return_code = main([
-        '--create-year', '2023',
-        '--license', license_template,
-        '--check',
-        f.resolve().as_posix(),
-    ])
 
     assert return_code == 1
     assert f.read_text() == 'print("Hello World")\n'
@@ -444,16 +460,17 @@ def test_main_exit_zero(tmp_path):
     f = tmp_path.joinpath('t.py')
     f.write_text('print("Hello World")\n')
 
-    license_template = (
-        'TEST LICENSE\n'
-        'this is a test license\n'
+    license_template = 'TEST LICENSE\n' 'this is a test license\n'
+    return_code = main(
+        [
+            '--create-year',
+            '2023',
+            '--license',
+            license_template,
+            '--exit-zero',
+            f.resolve().as_posix(),
+        ],
     )
-    return_code = main([
-        '--create-year', '2023',
-        '--license', license_template,
-        '--exit-zero',
-        f.resolve().as_posix(),
-    ])
 
     expected = """\
 # LICENSE HEADER MANAGED BY add-license-header
@@ -472,17 +489,18 @@ def test_main_exit_zero_if_unsupported_file_type(tmp_path):
     f = tmp_path.joinpath('unsupported')
     f.write_text('unsupported')
 
-    license_template = (
-        'TEST LICENSE\n'
-        'this is a test license\n'
-    )
+    license_template = 'TEST LICENSE\n' 'this is a test license\n'
 
-    return_code = main([
-        '--create-year', '2023',
-        '--license', license_template,
-        '--exit-zero-if-unsupported',
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--create-year',
+            '2023',
+            '--license',
+            license_template,
+            '--exit-zero-if-unsupported',
+            f.resolve().as_posix(),
+        ],
+    )
 
     assert return_code == 0
 
@@ -493,9 +511,7 @@ def test_main_create_year_from_git(mock_run, tmp_path):
     f.write_text('print("Hello World")\n')
 
     license_template = (
-        'TEST LICENSE\n'
-        'this is a test license\n'
-        '$create_year\n'
+        'TEST LICENSE\n' 'this is a test license\n' '$create_year\n'
     )
 
     mock_git_stdout = MagicMock()
@@ -507,10 +523,13 @@ def test_main_create_year_from_git(mock_run, tmp_path):
     )
     mock_run.return_value = mock_git_stdout
 
-    return_code = main([
-        '--license', license_template,
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--license',
+            license_template,
+            f.resolve().as_posix(),
+        ],
+    )
 
     expected = """\
 # LICENSE HEADER MANAGED BY add-license-header
@@ -545,11 +564,14 @@ def test_main_single_year_if_same(mock_run, tmp_path):
         '$create_year$year_delimiter$edit_year\n'
     )
 
-    return_code = main([
-        '--license', license_template,
-        '--single-year-if-same',
-        f.resolve().as_posix(),
-    ])
+    return_code = main(
+        [
+            '--license',
+            license_template,
+            '--single-year-if-same',
+            f.resolve().as_posix(),
+        ],
+    )
 
     expected = f"""\
 # LICENSE HEADER MANAGED BY add-license-header
@@ -562,4 +584,34 @@ def test_main_single_year_if_same(mock_run, tmp_path):
 print("Hello World")
 """
     assert return_code == 1
+    assert f.read_text() == expected
+
+
+@patch('add_license_header.subprocess.run')
+def test_main_ignore_directories(mock_run, tmp_path):
+    f = tmp_path.joinpath('t.py')
+    f.write_text('print("Hello World")\n')
+
+    license_template = 'TEST LICENSE'
+
+    mock_git_stdout = MagicMock()
+    mock_git_stdout.configure_mock(
+        **{
+            'returncode': 0,
+        },
+    )
+    mock_run.return_value = mock_git_stdout
+
+    return_code = main(
+        [
+            '--license',
+            license_template,
+            '--ignore-directories',
+            tmp_path.resolve().as_posix(),
+            f.resolve().as_posix(),
+        ],
+    )
+
+    expected = """print("Hello World")\n"""
+    assert return_code == 0
     assert f.read_text() == expected

@@ -128,3 +128,7 @@ and allows you to place the license header anywhere in the file.
 
 In unmanaged mode, enabled with the `--unmanaged` flag, the top-most comment
 block will be assumed to be the license header.
+
+## Contributors
+
+- [Dr. Martin Franke](https://github.com/datenwissenschaften)

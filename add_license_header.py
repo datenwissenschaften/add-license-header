@@ -61,9 +61,9 @@ ALH_HEADER = 'LICENSE HEADER MANAGED BY add-license-header'
 
 @functools.lru_cache
 def wrap_license_in_comments(
-        formatted_license: str,
-        comment: BlockComment,
-        is_managed: bool,
+    formatted_license: str,
+    comment: BlockComment,
+    is_managed: bool,
 ) -> list[str]:
     header = formatted_license.splitlines()
     if header[-1] == '':
@@ -85,6 +85,10 @@ def wrap_license_in_comments(
 
     header.append(f'{comment.end}\n')
     return header
+
+
+def _remove_empty_from_list(lst: list[str]) -> list[str]:
+    return [item for item in lst if item]
 
 
 def get_create_year(filepath: str) -> int:
@@ -113,10 +117,10 @@ class FormatLicenseFields(TypedDict):
 
 
 def format_license(
-        filepath: str,
-        license_template: str,
-        single_year_if_same: bool,
-        license_fields: FormatLicenseFields,
+    filepath: str,
+    license_template: str,
+    single_year_if_same: bool,
+    license_fields: FormatLicenseFields,
 ) -> str:
     author_name = license_fields['author_name']
     create_year = license_fields['create_year']
@@ -127,26 +131,29 @@ def format_license(
         create_year = get_create_year(filepath)
 
     if single_year_if_same and create_year == edit_year:
-        return string.Template(license_template).safe_substitute({
+        return string.Template(license_template).safe_substitute(
+            {
+                'author_name': author_name,
+                'create_year': create_year,
+                'edit_year': '',
+                'year_delimiter': '',
+            },
+        )
+    return string.Template(license_template).safe_substitute(
+        {
             'author_name': author_name,
             'create_year': create_year,
-            'edit_year': '',
-            'year_delimiter': '',
-        })
-    return string.Template(license_template).safe_substitute({
-        'author_name': author_name,
-        'create_year': create_year,
-        'edit_year': edit_year,
-        'year_delimiter': year_delimiter,
-    })
+            'edit_year': edit_year,
+            'year_delimiter': year_delimiter,
+        },
+    )
 
 
 def update_license_header(
-        contents: list[str],
-        comment: BlockComment,
-        wrapped_license: list[str],
+    contents: list[str],
+    comment: BlockComment,
+    wrapped_license: list[str],
 ) -> list[str]:
-
     # NOTE: "Special Comments" are comments that must appear at the top of the
     # file (i.e., before the license header). Moving these comments to after
     # the license header would break some form of functionality.
@@ -158,14 +165,12 @@ def update_license_header(
     comment_start = wrapped_license[0].strip()
     header_start_index = 0
 
-    while (
-        header_start_index < len(contents) and (
-            any(
-                contents[header_start_index].startswith(sc)
-                for sc in special_comments
-            ) or
-            not contents[header_start_index].startswith(comment_start)
+    while header_start_index < len(contents) and (
+        any(
+            contents[header_start_index].startswith(sc)
+            for sc in special_comments
         )
+        or not contents[header_start_index].startswith(comment_start)
     ):
         header_start_index += 1
 
@@ -192,16 +197,16 @@ def update_license_header(
         # License header is in file, so update it
         header_end_index = header_start_index + 1
         if comment.middle == comment.end:
-            while (
-                header_end_index < len(contents) and
-                contents[header_end_index].startswith(comment.end)
-            ):
+            while header_end_index < len(contents) and contents[
+                header_end_index
+            ].startswith(comment.end):
                 header_end_index += 1
         else:
             commend_end = comment.end.strip()
-            while (
-                header_end_index < len(contents) and
-                not contents[header_end_index].rstrip().endswith(commend_end)
+            while header_end_index < len(contents) and not contents[
+                header_end_index
+            ].rstrip().endswith(
+                commend_end,
             ):
                 header_end_index += 1
             header_end_index += 1
@@ -211,9 +216,9 @@ def update_license_header(
         # start with '/*', however, '/**' is a popular starting line. This is
         # to preserve this style choice.
         new_contents = (
-            contents[:header_start_index + 1] +
-            wrapped_license[1:-1] +
-            contents[header_end_index - 1:]
+            contents[: header_start_index + 1]
+            + wrapped_license[1:-1]
+            + contents[header_end_index - 1:]
         )
     return new_contents
 
@@ -241,14 +246,15 @@ def get_block_comment(filename: str) -> BlockComment:
 
 
 def add_license_header(
-        filepath: str,
-        license_template: str,
-        license_fields: FormatLicenseFields,
-        is_managed: bool,
-        single_year_if_same: bool,
-        exit_zero_if_unsupported: bool,
-        *,
-        dry_run: bool,
+    filepath: str,
+    license_template: str,
+    license_fields: FormatLicenseFields,
+    is_managed: bool,
+    single_year_if_same: bool,
+    exit_zero_if_unsupported: bool,
+    ignore_directories: list[str],
+    *,
+    dry_run: bool,
 ) -> int:
     try:
         block_comment = get_block_comment(filepath)
@@ -273,6 +279,12 @@ def add_license_header(
         block_comment,
         is_managed,
     )
+
+    if len(ignore_directories) > 0:
+        for directory in ignore_directories:
+            if directory in filepath:
+                print(f'ignoring {filepath}', file=sys.stderr)
+                return 0
 
     with open(filepath) as f:
         contents_text = f.readlines()
@@ -363,6 +375,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=', ',
         help='Value to replace $year_delimiter. Defaults to ", ".',
     )
+    parser.add_argument(
+        '--ignore-directories',
+        default='',
+        help='Comma separated list of directories to ignore.',
+    )
 
     license_group = parser.add_mutually_exclusive_group(required=True)
     license_group.add_argument(
@@ -397,6 +414,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             not args.unmanaged,
             args.single_year_if_same,
             args.exit_zero_if_unsupported,
+            _remove_empty_from_list(args.ignore_directories.split(',')),
             dry_run=args.check,
         )
     return return_code if not args.exit_zero else 0
